@@ -67,7 +67,7 @@ Before you can use `zen-dl.sh`, you need the following command-line tools instal
 <details>
 <summary>Installing Dependencies</summary>
 
-You can install the required dependencies using your system's package manager. Below are the commands for popular Linux distributions:
+You can install the required dependencies using your system's package manager. 
 
 ### Ubuntu/Debian
 
@@ -87,6 +87,14 @@ sudo dnf install -y bash curl jq fzf ffmpeg parallel
 ```bash
 sudo pacman -Syu bash curl jq fzf ffmpeg parallel 
 ```
+
+### macOS (using Homebrew)
+
+```bash
+brew install bash curl jq fzf ffmpeg parallel
+```
+
+> on windows, you can use WSL (Windows Subsystem for Linux) to run this script. Make sure to install the required dependencies in your WSL environment.
 
 </details>
 

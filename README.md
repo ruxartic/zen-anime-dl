@@ -114,7 +114,7 @@ sudo pacman -Syu bash curl jq fzf ffmpeg parallel
     For easier access from anywhere, move or symlink `zen-dl.sh` to a directory in your local `PATH`, like `~/.local/bin/`:
 
     ```bash
-    mv zen-dl.sh ~/.local/bin/zen-dl
+    ln zen-dl.sh ~/.local/bin/zen-dl
     ```
 
     Or add its directory to your `PATH` environment variable in your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`).

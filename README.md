@@ -91,7 +91,7 @@ sudo pacman -Syu bash curl jq fzf ffmpeg parallel
 ### macOS (using Homebrew)
 
 ```bash
-brew install bash curl jq fzf ffmpeg parallel
+brew install bash curl jq fzf ffmpeg parallel coreutils
 ```
 
 > on windows, you can use WSL (Windows Subsystem for Linux) to run this script. Make sure to install the required dependencies in your WSL environment.

@@ -438,6 +438,8 @@ download_file() {
     curl_opts_array+=(--max-time "$_SEGMENT_TIMEOUT")
   fi
   if [[ "$is_m3u8_related" == "true" ]]; then
+    curl_opts_array+=(-H "Referer: https://megacloud.club/") 
+    curl_opts_array+=(-H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
     curl_opts_array+=(-H "Accept: */*")
   fi
 
@@ -697,23 +699,50 @@ download_episode() {
       fi
 
       if [[ "$_SUBTITLE_LANGS_PREF" == "default" ]]; then
-        subtitles_to_download_json_array=$("$_JQ" --argjson subs "$subtitles_json" -n '$subs | if type=="array" and length>0 then [.[0]] else [] end')
+        # Try to get a "default: true" subtitle first, then "english", then first available
+        local default_sub english_sub first_sub
+        default_sub=$("$_JQ" -c 'map(select(.url? and .url != "" and .url != "null" and .default == true)) | .[0] // empty' <<<"$subtitles_json")
+        english_sub=$("$_JQ" -c 'map(select(.url? and .url != "" and .url != "null" and .label? and (.label | ascii_downcase | test("english"; "i")))) | .[0] // empty' <<<"$subtitles_json")
+        first_sub=$("$_JQ" -c 'map(select(.url? and .url != "" and .url != "null")) | .[0] // empty' <<<"$subtitles_json")
+
+        if [[ -n "$default_sub" && "$default_sub" != "null" ]]; then
+            subtitles_to_download_json_array="[$default_sub]"
+        elif [[ -n "$english_sub" && "$english_sub" != "null" ]]; then
+            subtitles_to_download_json_array="[$english_sub]"
+        elif [[ -n "$first_sub" && "$first_sub" != "null" ]]; then
+            subtitles_to_download_json_array="[$first_sub]"
+        else
+            subtitles_to_download_json_array="[]"
+        fi
+        print_debug "  Default subtitle selection logic resulted in: $subtitles_to_download_json_array"
       elif [[ "$_SUBTITLE_LANGS_PREF" == "all" ]]; then
-        subtitles_to_download_json_array="$subtitles_json"
+        subtitles_to_download_json_array="$subtitles_json" 
+        subtitles_to_download_json_array=$("$_JQ" -c '[.[]? | select(.url? and .url != "" and .url != "null")]' <<<"$subtitles_to_download_json_array")
         print_debug "  Selected ALL available subtitles."
       else
         local temp_subs_array="[]"
-        for lang_code_pref in "${wanted_langs_array[@]}"; do
+        local wanted_langs_array_new=() 
+        IFS=',' read -ra wanted_langs_array_new <<< "$_SUBTITLE_LANGS_PREF"
+
+        for lang_code_pref in "${wanted_langs_array_new[@]}"; do
+          lang_code_pref=$(echo "$lang_code_pref" | tr '[:upper:]' '[:lower:]' | xargs) # Normalize
           local found_sub
-          found_sub=$("$_JQ" --argjson subs "$subtitles_json" --arg lang "$lang_code_pref" -c '$subs | map(select(.label | test($lang; "i") or .lang | test($lang; "i"))) | .[0] // empty')
-          if [[ -n "$found_sub" ]]; then
+          found_sub=$("$_JQ" --argjson subs "$subtitles_json" --arg lang "$lang_code_pref" -c \
+            '$subs | map(select(.url? and .url != "" and .url != "null" and .label? and (
+                (.label | ascii_downcase | contains($lang)) or 
+                (if $lang == "eng" then (.label | ascii_downcase | test("english"; "i")) else false end) or
+                (if $lang == "spa" then (.label | ascii_downcase | test("spanish"; "i")) else false end)
+              ) 
+            )) | .[0] // empty')
+
+          if [[ -n "$found_sub" && "$found_sub" != "null" ]]; then
             temp_subs_array=$("$_JQ" -c '. + [$found_sub]' <<<"$temp_subs_array")
             print_debug "  Found subtitle for lang '$lang_code_pref'."
           else
             print_debug "  No subtitle found for lang '$lang_code_pref'."
           fi
         done
-        subtitles_to_download_json_array="$temp_subs_array"
+        subtitles_to_download_json_array=$("$_JQ" -c 'unique_by(.url)' <<<"$temp_subs_array")
       fi
 
       local sub_idx=0
@@ -724,7 +753,7 @@ download_episode() {
           local sub_url sub_label sub_ext sub_filename
           sub_url=$("$_JQ" -r '.url // empty' <<<"$sub_obj_json")
           sub_label=$("$_JQ" -r '.label // "sub"' <<<"$sub_obj_json")
-          sub_label=$(sanitize_filename "$sub_label")
+          sub_label=$(sanitize_filename "$sub_label") 
 
           if [[ -z "$sub_url" || "$sub_url" == "null" ]]; then
             print_warn "  Subtitle $sub_idx ('$sub_label') has no URL. Skipping."
@@ -738,7 +767,7 @@ download_episode() {
           elif [[ "$sub_url" == *.ass ]]; then
             sub_ext="ass"
           else
-            sub_ext="vtt"
+            sub_ext="vtt" 
             print_warn "  Unknown subtitle extension for $sub_url, assuming .vtt"
           fi
 
@@ -759,7 +788,7 @@ download_episode() {
     fi
   else
     print_warn "Failed to download video for Ep $ep_num."
-    rm -f "$output_video_path"
+    rm -f "$output_video_path" 
   fi
 
   if [[ -d "$temp_episode_dir" ]]; then

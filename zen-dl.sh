@@ -370,10 +370,26 @@ get_stream_details() {
     print_warn "  No servers found or invalid format for ep $ep_stream_id via /api/servers/."
     return 1
   fi
-  servers_for_audio_type=$("$_JQ" -c --arg type "$audio_pref" '[.[] | select(.type == $type)]' <<<"$available_servers_json")
-  if [[ $("$_JQ" -e 'length == 0' <<<"$servers_for_audio_type") == "true" ]]; then
-    print_warn "  No servers of type '$audio_pref' for ep $ep_stream_id."
-    return 1
+  local current_audio_pref_for_request="$audio_pref" 
+
+  servers_for_audio_type=$("$_JQ" -c --arg type "$current_audio_pref_for_request" '[.[] | select(.type == $current_audio_pref_for_request)]' <<<"$available_servers_json")
+
+  if [[ ("$_JQ" -e 'length == 0' <<<"$servers_for_audio_type") == "true" ]]; then
+    if [[ "$audio_pref" == "dub" ]]; then 
+      print_warn "  No 'dub' servers found for Ep ${ep_num_for_log:-$ep_stream_id}. Attempting to find 'sub' servers..."
+      current_audio_pref_for_request="sub" 
+      servers_for_audio_type=$("$_JQ" -c --arg type "$current_audio_pref_for_request" '[.[] | select(.type == $current_audio_pref_for_request)]' <<<"$available_servers_json")
+      
+      if [[ ("$_JQ" -e 'length == 0' <<<"$servers_for_audio_type") == "true" ]]; then
+        print_warn "  No 'sub' servers found either for Ep ${ep_num_for_log:-$ep_stream_id}."
+        return 1 
+      else
+        print_info "  Successfully switched to 'sub' servers for Ep ${ep_num_for_log:-$ep_stream_id}."
+      fi
+    else
+      print_warn "  No servers of type '$audio_pref' found for Ep ${ep_num_for_log:-$ep_stream_id}."
+      return 1
+    fi
   fi
   fzf_input_servers=$("$_JQ" -r '.[] | "\(.serverName // "N/A") (\(.type // "N/A"))|\(.serverName // "N/A" | ascii_downcase | gsub(" "; "-"))"' <<<"$servers_for_audio_type")
   filtered_servers="$fzf_input_servers"
@@ -395,7 +411,7 @@ get_stream_details() {
   chosen_server_api_name=$(echo "$selected_server_line" | awk -F'|' '{print $2}')
   print_info "  Selected server: ${BOLD}${chosen_server_display_name}${NC} (API: $chosen_server_api_name)"
   encoded_ep_stream_id_for_stream_query=$("$_JQ" -nr --arg str "$ep_stream_id" '$str|@uri')
-  query_params="id=$encoded_ep_stream_id_for_stream_query&server=${chosen_server_api_name}&type=${audio_pref}"
+  query_params="id=$encoded_ep_stream_id_for_stream_query&server=${chosen_server_api_name}&type=${current_audio_pref_for_request}"
   print_debug "  Calling /stream with query: [$query_params]"
   stream_data_results_json=$(api_get_results "/stream" "$query_params" ".results") || return 1
   print_debug "  Raw /stream .results: [$stream_data_results_json]"

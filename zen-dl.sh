@@ -372,15 +372,18 @@ get_stream_details() {
   fi
   local current_audio_pref_for_request="$audio_pref" 
 
-  servers_for_audio_type=$("$_JQ" -c --arg type "$current_audio_pref_for_request" '[.[] | select(.type == $current_audio_pref_for_request)]' <<<"$available_servers_json")
+  servers_for_audio_type=$("$_JQ" -c --arg current_type "$current_audio_pref_for_request" '[.[] | select(.type == $current_type)]' <<<"$available_servers_json")
 
-  if [[ ("$_JQ" -e 'length == 0' <<<"$servers_for_audio_type") == "true" ]]; then
+  local is_empty_servers
+  is_empty_servers=$("$_JQ" -r -e 'length == 0' <<<"$servers_for_audio_type")
+  if [[ "$is_empty_servers" == "true" ]]; then
     if [[ "$audio_pref" == "dub" ]]; then 
       print_warn "  No 'dub' servers found for Ep ${ep_num_for_log:-$ep_stream_id}. Attempting to find 'sub' servers..."
       current_audio_pref_for_request="sub" 
-      servers_for_audio_type=$("$_JQ" -c --arg type "$current_audio_pref_for_request" '[.[] | select(.type == $current_audio_pref_for_request)]' <<<"$available_servers_json")
-      
-      if [[ ("$_JQ" -e 'length == 0' <<<"$servers_for_audio_type") == "true" ]]; then
+      servers_for_audio_type=$("$_JQ" -c --arg current_type "$current_audio_pref_for_request" '[.[] | select(.type == $current_type)]' <<<"$available_servers_json")
+      local is_empty_fallback_servers
+      is_empty_fallback_servers=$("$_JQ" -r -e 'length == 0' <<<"$servers_for_audio_type")
+      if [[ "$is_empty_fallback_servers" == "true" ]]; then
         print_warn "  No 'sub' servers found either for Ep ${ep_num_for_log:-$ep_stream_id}."
         return 1 
       else

@@ -10,7 +10,7 @@
 
 </div>
 
-`zen-dl.sh` is a powerful command-line tool written in Bash to download anime series and episodes directly from a [Zen API](https://github.com/PacaHat/zen-api) instance. It offers features like anime searching, flexible episode selection, resolution preference, server choice, and subtitle management.
+`zen-dl.sh` is a command-line tool written in Bash to download anime series and episodes directly from a [Zen API](https://github.com/PacaHat/zen-api) instance. It offers features like anime searching, flexible episode selection, resolution preference, server choice, and subtitle management.
 
 > [!NOTE]
 > This script is designed to work with a running instance of the Zen API. Ensure you have access to such an instance before using this script. See the [Configuration](#️-configuration) section for details on setting the API URL.
@@ -135,12 +135,15 @@ The script determines the Zen API URL in the following order of precedence:
 
     ```bash
     # Example for your shell session:
-    export ZEN_API_URL="https://my-custom-zen-api.example.com/api"
+    export ZEN_API_URL="https://my-custom-zen-api.example.com/api" 
     # Then run the script:
     ./zen-dl.sh -a "Some Anime" 
     ```
 
     To make this permanent, add the `export` line to your shell's startup file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`).
+
+    > [!NOTE]
+    > The `ZEN_API_URL` should point to the base URL of a Zen API instance, including the `/api` route. For example: `https://my-zen-api.example.com/api`.
 
 2. **Script's Default `_DEFAULT_ZEN_API_BASE_URL`**: If `ZEN_API_URL` is not set or is empty, the script will use the value of `_DEFAULT_ZEN_API_BASE_URL` defined near the top of the `zen-dl.sh` file.
 
@@ -282,6 +285,10 @@ For a full list of options, run:
 ## 🤝 Contributing
 
 Contributions are welcome! If you have suggestions, bug fixes, or feature requests, please open an issue or submit a pull request.
+
+## 🗂️ Other similar projects
+ - [animepahe-dl](https://github.com/ruxartic/animepahe-dl)
+ - [twistmoe-dl](https://github.com/KevCui/twistmoe-dl)
 
 ## 📜 License
 

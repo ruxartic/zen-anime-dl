@@ -142,8 +142,8 @@ The script determines the Zen API URL in the following order of precedence:
 
     To make this permanent, add the `export` line to your shell's startup file (e.g., `~/.bashrc`, `~/.zshrc`, `~/.profile`).
 
-    > [!NOTE]
-    > The `ZEN_API_URL` should point to the base URL of a Zen API instance, including the `/api` route. For example: `https://my-zen-api.example.com/api`.
+> [!NOTE]
+> The `ZEN_API_URL` should point to the base URL of a Zen API instance, including the `/api` route. For example: `https://my-zen-api.example.com/api`.
 
 2. **Script's Default `_DEFAULT_ZEN_API_BASE_URL`**: If `ZEN_API_URL` is not set or is empty, the script will use the value of `_DEFAULT_ZEN_API_BASE_URL` defined near the top of the `zen-dl.sh` file.
 
